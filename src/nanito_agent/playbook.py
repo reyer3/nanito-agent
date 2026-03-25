@@ -10,6 +10,16 @@ import yaml
 
 
 @dataclass
+class VerifySignal:
+    """A single verification signal in a composite metric."""
+
+    name: str
+    command: str
+    weight: float = 1.0
+    direction: str = "higher"  # "higher" or "lower"
+
+
+@dataclass
 class Step:
     """A single agent step in a playbook."""
 
@@ -35,6 +45,7 @@ class Playbook:
     description: str
     inputs: list[dict[str, str]] = field(default_factory=list)
     steps: list[Step | ParallelGroup] = field(default_factory=list)
+    verify: list[VerifySignal] = field(default_factory=list)
 
     @property
     def agent_names(self) -> set[str]:
@@ -106,9 +117,19 @@ def parse_playbook(source: str | Path) -> Playbook:
         else:
             steps.append(_parse_step(raw_step))
 
+    verify: list[VerifySignal] = []
+    for raw_signal in data.get("verify", []):
+        verify.append(VerifySignal(
+            name=raw_signal["name"],
+            command=raw_signal["command"],
+            weight=raw_signal.get("weight", 1.0),
+            direction=raw_signal.get("direction", "higher"),
+        ))
+
     return Playbook(
         name=data["name"],
         description=data.get("description", ""),
         inputs=data.get("inputs", []),
         steps=steps,
+        verify=verify,
     )
