@@ -1,0 +1,14 @@
+{
+  "name": "nanito-agent",
+  "version": "0.1.0",
+  "description": "Skills, hooks, commands, and agents for nanito-agent",
+  "author": { "name": "nanito-agent" },
+  "license": "MIT",
+  "agents": [
+    "./agents/planner.md",
+    "./agents/reviewer.md",
+    "./agents/debugger.md"
+  ],
+  "commands": ["./commands/"],
+  "skills": ["./skills/"]
+}

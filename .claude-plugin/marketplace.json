@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "nanito-agent",
+  "description": "Claude Code configurator — identity, memory, hooks, and skills for your team",
+  "owner": { "name": "nanito-agent" },
+  "plugins": [
+    {
+      "name": "nanito-agent",
+      "source": "./plugin",
+      "description": "Skills, hooks, commands, and agents for nanito-agent",
+      "version": "0.1.0",
+      "author": { "name": "nanito-agent" },
+      "category": "workflow",
+      "tags": ["agents", "skills", "hooks", "memory", "security"],
+      "license": "MIT"
+    }
+  ]
+}
