@@ -101,6 +101,41 @@ def test_agents_list(capsys):
     assert "implementer" in output
 
 
-def test_builtin_playbook_exists():
-    """build-saas.yaml playbook exists."""
+def test_run_json_output(tmp_path, capsys):
+    """--json flag outputs JSON execution script."""
+    playbook = tmp_path / "test.yaml"
+    playbook.write_text(
+        "name: test\n"
+        "description: Test\n"
+        "steps:\n"
+        "  - agent: architect\n"
+        "    task: Design it\n"
+    )
+    _run([str(playbook), "--json"])
+    output = capsys.readouterr().out
+    import json
+    data = json.loads(output)
+    assert data["playbook"] == "test"
+    assert data["total_agents"] == 1
+
+
+def test_run_shows_execution_summary(tmp_path, capsys):
+    """Default output includes execution summary."""
+    playbook = tmp_path / "test.yaml"
+    playbook.write_text(
+        "name: test\n"
+        "description: Test\n"
+        "steps:\n"
+        "  - agent: architect\n"
+        "    task: Design it\n"
+    )
+    _run([str(playbook)])
+    output = capsys.readouterr().out
+    assert "SEQUENTIAL" in output or "Total agents" in output
+
+
+def test_builtin_playbooks_exist():
+    """All builtin playbooks exist."""
     assert (PLAYBOOKS_DIR / "build-saas.yaml").exists()
+    assert (PLAYBOOKS_DIR / "build-api.yaml").exists()
+    assert (PLAYBOOKS_DIR / "build-dashboard.yaml").exists()

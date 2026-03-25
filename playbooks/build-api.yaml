@@ -1,0 +1,25 @@
+name: build-api
+description: Build a REST API from an idea — spec, endpoints, tests, docs
+
+inputs:
+  - idea: string
+  - framework: string
+
+steps:
+  - agent: architect
+    task: "Design the API architecture for: {{idea}}. Framework: {{framework}}"
+    output: spec.md
+
+  - agent: api-designer
+    task: "Design REST endpoints and OpenAPI spec from the architecture"
+    output: api-spec.yaml
+
+  - agent: implementer
+    task: "Implement the API from the OpenAPI spec"
+    worktree: true
+
+  - agent: tester
+    task: "Write integration tests for all API endpoints"
+
+  - agent: reviewer
+    task: "Review API code — security, correctness, performance"

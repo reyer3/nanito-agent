@@ -1,0 +1,33 @@
+name: build-dashboard
+description: Build a BI dashboard from data — schema, queries, visualizations
+
+inputs:
+  - data_source: string
+  - metrics: string
+
+steps:
+  - agent: architect
+    task: "Design dashboard architecture for {{data_source}} with metrics: {{metrics}}"
+    output: spec.md
+
+  - parallel:
+    - agent: api-designer
+      task: "Design the data API — queries, aggregations, filters"
+      output: api-spec.yaml
+    - agent: frontend-builder
+      task: "Design the dashboard layout and visualization components"
+      output: ui-spec.md
+
+  - parallel:
+    - agent: implementer
+      task: "Build the data API and query layer"
+      worktree: true
+    - agent: implementer
+      task: "Build the dashboard frontend with charts and filters"
+      worktree: true
+
+  - agent: tester
+    task: "Write tests for data queries and dashboard interactions"
+
+  - agent: reviewer
+    task: "Final review — data correctness, performance, UX"

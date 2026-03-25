@@ -66,6 +66,7 @@ def _run(args: list[str]) -> None:
     from pathlib import Path
 
     from nanito_agent.agents import discover_agents, validate_playbook_agents
+    from nanito_agent.executor import compile_execution
     from nanito_agent.playbook import parse_playbook
     from nanito_agent.runner import plan_execution, render_plan
 
@@ -88,10 +89,16 @@ def _run(args: list[str]) -> None:
         console.print("[dim]Create them in src/nanito_agent/agents/ or a project agents/ dir[/dim]")
         sys.exit(1)
 
-    # Show execution plan
+    # Compile execution
     plan = plan_execution(playbook, variables)
-    console.print(render_plan(plan))
-    console.print("\n[yellow]Execution not yet implemented — plan preview only.[/yellow]")
+    script = compile_execution(plan, agents)
+
+    if "--json" in args:
+        console.print(script.to_json())
+    else:
+        console.print(render_plan(plan))
+        console.print("")
+        console.print(script.to_summary())
 
 
 def _resolve_playbook(name: str) -> "Path":
