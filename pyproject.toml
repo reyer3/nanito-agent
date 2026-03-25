@@ -9,6 +9,7 @@ authors = [{ name = "nanito-agent contributors" }]
 dependencies = [
     "rich>=13.0",
     "jinja2>=3.1",
+    "pyyaml>=6.0",
 ]
 
 [project.scripts]
