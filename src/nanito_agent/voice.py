@@ -50,18 +50,28 @@ class EspeakTTS:
 class PiperTTS:
     """Local TTS via piper. Higher quality than espeak."""
 
+    VOICES_DIR = Path.home() / ".local" / "share" / "piper" / "voices"
+
     def __init__(self, voice: str = "es_ES-mls_10246-low") -> None:
         self.voice = voice
         self._bin = shutil.which("piper")
+
+    def _resolve_model(self, voice: str) -> str:
+        """Resolve voice name to full .onnx path if it exists."""
+        model_path = self.VOICES_DIR / f"{voice}.onnx"
+        if model_path.exists():
+            return str(model_path)
+        return voice  # fallback to raw name (piper may auto-download)
 
     def speak(self, text: str, voice: str | None = None) -> Path | None:
         if not self._bin:
             return None
         voice = voice or self.voice
+        model = self._resolve_model(voice)
         out = Path(tempfile.mktemp(suffix=".wav", prefix="nanito_tts_"))
         try:
-            result = subprocess.run(
-                [self._bin, "--model", voice, "--output_file", str(out)],
+            subprocess.run(
+                [self._bin, "--model", model, "--output_file", str(out)],
                 input=text,
                 capture_output=True,
                 text=True,
