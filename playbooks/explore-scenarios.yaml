@@ -1,0 +1,16 @@
+name: explore-scenarios
+description: Generate edge cases and test scenarios from a seed feature or spec
+
+inputs:
+  - seed: string
+
+steps:
+  - agent: scenario-explorer
+    task: "Explore edge cases for: {{seed}}. Walk all dimensions systematically."
+    output: scenarios.md
+
+  - agent: tester
+    task: "Write tests for the top 5 priority scenarios from the scenario report"
+
+  - agent: devops-guard
+    task: "Verify tests pass and no regressions introduced"
