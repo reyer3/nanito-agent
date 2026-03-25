@@ -23,6 +23,14 @@ def main() -> None:
         _run(args[1:])
     elif args[0] == "agents":
         _agents()
+    elif args[0] == "wish":
+        _wish(args[1:])
+    elif args[0] == "wishes":
+        _wishes()
+    elif args[0] == "approve":
+        _approve(args[1:])
+    elif args[0] == "reject":
+        _reject(args[1:])
     elif args[0] == "web":
         _web(args[1:])
     elif args[0] == "--help":
@@ -195,6 +203,121 @@ def _agents() -> None:
     console.print(table)
 
 
+def _wish(args: list[str]) -> None:
+    from nanito_agent.inbox import create_wish
+
+    if not args:
+        console.print("[red]Usage: nanito-agent wish \"quiero X\"[/red]")
+        sys.exit(1)
+
+    raw = " ".join(args)
+    project = None
+    # Extract --project if provided
+    for i, arg in enumerate(args):
+        if arg == "--project" and i + 1 < len(args):
+            project = args[i + 1]
+            raw = " ".join(args[:i] + args[i + 2:])
+            break
+
+    wish = create_wish(source="terminal", raw=raw, project=project)
+    console.print(f"[green]Wish created:[/green] {wish.id[:8]}")
+    console.print(f"[dim]{wish.raw}[/dim]")
+
+
+def _wishes() -> None:
+    from rich.table import Table
+
+    from nanito_agent.inbox import list_wishes
+
+    wishes = list_wishes()
+    if not wishes:
+        console.print("[yellow]No wishes yet.[/yellow] Use: nanito-agent wish \"quiero X\"")
+        return
+
+    table = Table(title="Wishes", show_header=True)
+    table.add_column("ID", style="cyan", max_width=8)
+    table.add_column("Status", style="bold")
+    table.add_column("Source", style="dim")
+    table.add_column("Playbook", style="dim")
+    table.add_column("Wish", max_width=50)
+
+    status_colors = {
+        "pending": "yellow",
+        "analyzing": "blue",
+        "ready": "cyan",
+        "approved": "green",
+        "executing": "magenta",
+        "done": "green",
+        "failed": "red",
+    }
+
+    for w in wishes:
+        color = status_colors.get(w.status, "")
+        status = f"[{color}]{w.status}[/]" if color else w.status
+        table.add_row(
+            w.id[:8],
+            status,
+            w.source,
+            w.playbook or "",
+            w.raw[:50],
+        )
+
+    console.print(table)
+
+
+def _approve(args: list[str]) -> None:
+    from nanito_agent.inbox import approve_wish, get_wish, list_wishes
+
+    if not args:
+        console.print("[red]Usage: nanito-agent approve <wish-id>[/red]")
+        sys.exit(1)
+
+    wish_id = _resolve_wish_id(args[0])
+    if not wish_id:
+        console.print(f"[red]Wish not found: {args[0]}[/red]")
+        sys.exit(1)
+
+    wish = get_wish(wish_id)
+    if wish:
+        approve_wish(wish_id)
+        console.print(f"[green]Approved:[/green] {wish.raw[:60]}")
+    else:
+        console.print(f"[red]Wish not found: {args[0]}[/red]")
+        sys.exit(1)
+
+
+def _reject(args: list[str]) -> None:
+    from nanito_agent.inbox import get_wish, list_wishes, reject_wish
+
+    if not args:
+        console.print("[red]Usage: nanito-agent reject <wish-id>[/red]")
+        sys.exit(1)
+
+    wish_id = _resolve_wish_id(args[0])
+    if not wish_id:
+        console.print(f"[red]Wish not found: {args[0]}[/red]")
+        sys.exit(1)
+
+    wish = get_wish(wish_id)
+    if wish:
+        reject_wish(wish_id)
+        console.print(f"[red]Rejected:[/red] {wish.raw[:60]}")
+    else:
+        console.print(f"[red]Wish not found: {args[0]}[/red]")
+        sys.exit(1)
+
+
+def _resolve_wish_id(partial: str) -> str | None:
+    """Resolve a partial wish ID (prefix match) to a full ID."""
+    from nanito_agent.inbox import list_wishes
+
+    wishes = list_wishes(limit=100)
+    for w in wishes:
+        if w.id.startswith(partial):
+            return w.id
+    return None
+
+
 def _web(args: list[str]) -> None:
     import uvicorn
 
@@ -219,6 +342,10 @@ def _help() -> None:
         "\n  nanito-agent sessions [id]       Session history (--stats for aggregate)"
         "\n  nanito-agent run <playbook>      Run a playbook (--var key=val)"
         "\n  nanito-agent agents              List available agents"
+        "\n  nanito-agent wish \"quiero X\"     Create a new wish (--project name)"
+        "\n  nanito-agent wishes              List all wishes with status"
+        "\n  nanito-agent approve <id>        Approve a wish for execution"
+        "\n  nanito-agent reject <id>         Reject a wish"
         "\n  nanito-agent web                 Start the web UI (--host, --port)"
         "\n  nanito-agent --help              This message\n"
     )
