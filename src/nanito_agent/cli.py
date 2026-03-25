@@ -23,6 +23,8 @@ def main() -> None:
         _run(args[1:])
     elif args[0] == "agents":
         _agents()
+    elif args[0] == "web":
+        _web(args[1:])
     elif args[0] == "--help":
         _help()
     else:
@@ -193,6 +195,22 @@ def _agents() -> None:
     console.print(table)
 
 
+def _web(args: list[str]) -> None:
+    import uvicorn
+
+    host = "127.0.0.1"
+    port = 8000
+
+    for i, arg in enumerate(args):
+        if arg == "--host" and i + 1 < len(args):
+            host = args[i + 1]
+        elif arg == "--port" and i + 1 < len(args):
+            port = int(args[i + 1])
+
+    console.print(f"\n[bold]nanito-agent[/bold] web UI at http://{host}:{port}\n")
+    uvicorn.run("nanito_agent.web:app", host=host, port=port, reload=False)
+
+
 def _help() -> None:
     console.print(
         "\n[bold]Usage:[/bold]"
@@ -201,5 +219,6 @@ def _help() -> None:
         "\n  nanito-agent sessions [id]       Session history (--stats for aggregate)"
         "\n  nanito-agent run <playbook>      Run a playbook (--var key=val)"
         "\n  nanito-agent agents              List available agents"
+        "\n  nanito-agent web                 Start the web UI (--host, --port)"
         "\n  nanito-agent --help              This message\n"
     )
