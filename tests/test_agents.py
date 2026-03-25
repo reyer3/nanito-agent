@@ -82,6 +82,32 @@ def test_discover_extra_overrides_builtin(tmp_path):
     assert agents["architect"].description == "custom"
 
 
+def test_discover_project_agents_auto(tmp_path):
+    """Auto-detect agents/ dir in work_dir."""
+    agents_dir = tmp_path / "agents"
+    agents_dir.mkdir()
+    f = agents_dir / "project-agent.md"
+    f.write_text("---\nname: project-agent\ndescription: local\n---\nDo stuff.")
+    agents = discover_agents(work_dir=tmp_path)
+    assert "project-agent" in agents
+
+
+def test_project_agents_override_builtins(tmp_path):
+    """Project agents/ dir overrides builtins with same name."""
+    agents_dir = tmp_path / "agents"
+    agents_dir.mkdir()
+    f = agents_dir / "architect.md"
+    f.write_text("---\nname: architect\ndescription: custom arch\n---\nCustom.")
+    agents = discover_agents(work_dir=tmp_path)
+    assert agents["architect"].description == "custom arch"
+
+
+def test_no_project_agents_dir(tmp_path):
+    """Works fine when no agents/ dir exists in work_dir."""
+    agents = discover_agents(work_dir=tmp_path)
+    assert "architect" in agents  # still has builtins
+
+
 def test_validate_all_present():
     """No missing agents when all are available."""
     agents = discover_agents()

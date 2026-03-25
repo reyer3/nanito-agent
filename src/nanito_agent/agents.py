@@ -57,17 +57,28 @@ def load_agent(path: Path) -> AgentDef:
 
 def discover_agents(
     extra_dirs: list[Path] | None = None,
+    work_dir: Path | None = None,
 ) -> dict[str, AgentDef]:
     """Discover all available agent definitions.
 
-    Searches builtin agents dir + any extra directories.
-    Later definitions override earlier ones (project agents override builtins).
+    Search order (later overrides earlier):
+    1. Builtin agents (nanito-agent package)
+    2. Extra dirs (explicitly passed)
+    3. Project agents (<work_dir>/agents/ — auto-detected)
+
+    Project agents override builtins, enabling per-project customization.
     """
     agents: dict[str, AgentDef] = {}
+    wdir = work_dir or Path.cwd()
 
     dirs = [BUILTIN_AGENTS_DIR]
     if extra_dirs:
         dirs.extend(extra_dirs)
+
+    # Auto-detect project-level agents directory
+    project_agents = wdir / "agents"
+    if project_agents.exists() and project_agents not in dirs:
+        dirs.append(project_agents)
 
     for d in dirs:
         if not d.exists():
