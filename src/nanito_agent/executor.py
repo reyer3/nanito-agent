@@ -117,6 +117,7 @@ def build_agent_prompt(
     work_dir: Path,
     prior_outputs: dict[str, str] | None = None,
     engram_context: str | None = None,
+    mcp_section: str | None = None,
 ) -> str:
     """Build the full prompt for an agent combining its definition and task."""
     parts = [
@@ -143,6 +144,8 @@ def build_agent_prompt(
             "what worked before.\n\n"
             f"{engram_context}"
         )
+    if mcp_section:
+        parts.append(mcp_section)
     return "\n\n".join(parts)
 
 
@@ -151,6 +154,7 @@ def compile_execution(
     agents: dict[str, AgentDef],
     work_dir: Path | None = None,
     engram_context: str | None = None,
+    mcp_section: str | None = None,
 ) -> ExecutionScript:
     """Compile an execution plan into concrete agent commands."""
     wdir = work_dir or Path.cwd()
@@ -167,6 +171,7 @@ def compile_execution(
                 step, agent_def, wdir,
                 prior_outputs=accumulated_outputs or None,
                 engram_context=engram_context,
+                mcp_section=mcp_section,
             )
             cmd = AgentCommand(
                 agent_name=step.agent,

@@ -67,6 +67,7 @@ def _run(args: list[str]) -> None:
 
     from nanito_agent.agents import discover_agents, validate_playbook_agents
     from nanito_agent.executor import compile_execution
+    from nanito_agent.mcp import MCPContext
     from nanito_agent.memory import PlaybookMemory
     from nanito_agent.playbook import parse_playbook
     from nanito_agent.runner import plan_execution, render_plan
@@ -106,10 +107,18 @@ def _run(args: list[str]) -> None:
     if memory.prior_learnings and not json_mode:
         console.print("[dim]Engram: loaded prior learnings[/dim]")
 
-    # Compile execution with Engram context
+    # Detect available MCP servers
+    mcp_ctx = MCPContext.detect()
+    if not json_mode and mcp_ctx.available:
+        names = ", ".join(mcp_ctx.available.keys())
+        console.print(f"[dim]MCP: {names}[/dim]")
+
+    # Compile execution with Engram + MCP context
     plan = plan_execution(playbook, variables)
     script = compile_execution(
-        plan, agents, engram_context=memory.prior_learnings,
+        plan, agents,
+        engram_context=memory.prior_learnings,
+        mcp_section=mcp_ctx.to_prompt_section(),
     )
 
     if json_mode:
