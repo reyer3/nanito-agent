@@ -1,0 +1,17 @@
+name: fix-bug
+description: Diagnose and fix a bug — debugger finds root cause, fixer implements minimal fix
+
+inputs:
+  - bug: string
+
+steps:
+  - agent: debugger
+    task: "Investigate and diagnose this bug: {{bug}}"
+    output: diagnosis.md
+
+  - agent: fixer
+    task: "Implement the fix based on the diagnosis. Add a regression test."
+    worktree: true
+
+  - agent: reviewer
+    task: "Review the fix — correctness, regression test quality, no collateral damage"
