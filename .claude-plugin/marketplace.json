@@ -1,17 +1,17 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "nanito-agent",
-  "description": "Claude Code configurator — identity, memory, hooks, and skills for your team",
-  "owner": { "name": "nanito-agent" },
+  "description": "Agent orchestration platform for Claude Code — playbooks, 12 specialized agents, session monitoring, and Engram memory integration",
+  "owner": { "name": "reyer3" },
   "plugins": [
     {
       "name": "nanito-agent",
       "source": "./plugin",
-      "description": "Skills, hooks, commands, and agents for nanito-agent",
-      "version": "0.1.0",
-      "author": { "name": "nanito-agent" },
+      "description": "Orchestrate agent swarms with YAML playbooks. 12 agents (architect, implementer, reviewer, debugger, fixer, predictor, etc.), composite verification, Engram memory, session monitoring.",
+      "version": "0.2.0",
+      "author": { "name": "reyer3" },
       "category": "workflow",
-      "tags": ["agents", "skills", "hooks", "memory", "security"],
+      "tags": ["orchestration", "agents", "playbooks", "swarm", "memory", "monitoring", "devops", "premortem"],
       "license": "MIT"
     }
   ]

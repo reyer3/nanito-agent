@@ -134,14 +134,18 @@ def _resolve_playbook(name: str) -> "Path":
     if path.exists():
         return path
 
-    # Check builtin playbooks
-    builtin = Path(__file__).parent.parent.parent / "playbooks" / name
-    if builtin.exists():
-        return builtin
-    if not name.endswith(".yaml"):
-        builtin_yaml = builtin.with_suffix(".yaml")
-        if builtin_yaml.exists():
-            return builtin_yaml
+    # Check builtin playbooks (dev mode: repo root, installed: package)
+    candidates = [
+        Path(__file__).parent.parent.parent / "playbooks" / name,
+        Path(__file__).parent / "playbooks" / name,
+    ]
+    for builtin in candidates:
+        if builtin.exists():
+            return builtin
+        if not name.endswith(".yaml"):
+            builtin_yaml = builtin.with_suffix(".yaml")
+            if builtin_yaml.exists():
+                return builtin_yaml
 
     console.print(f"[red]Playbook not found: {name}[/red]")
     sys.exit(1)

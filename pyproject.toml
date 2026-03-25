@@ -1,7 +1,7 @@
 [project]
 name = "nanito-agent"
-version = "0.1.0"
-description = "Claude Code configurator — identity, memory, hooks, and skills for your team"
+version = "0.2.0"
+description = "Agent orchestration platform for Claude Code — playbooks, agents, memory, monitoring"
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.12"
@@ -24,6 +24,8 @@ packages = ["src/nanito_agent"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "src/nanito_agent/templates" = "nanito_agent/templates"
+"src/nanito_agent/agents" = "nanito_agent/agents"
+"playbooks" = "nanito_agent/playbooks"
 
 [dependency-groups]
 dev = ["pytest>=8.0"]

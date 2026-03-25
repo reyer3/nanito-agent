@@ -1,9 +1,11 @@
 {
   "name": "nanito-agent",
-  "version": "0.1.0",
-  "description": "Skills, hooks, commands, and agents for nanito-agent",
-  "author": { "name": "nanito-agent" },
+  "version": "0.2.0",
+  "description": "Agent orchestration platform — playbooks, 12 agents, Engram memory, session monitoring",
+  "author": { "name": "reyer3" },
   "license": "MIT",
+  "homepage": "https://github.com/reyer3/nanito-agent",
+  "repository": "https://github.com/reyer3/nanito-agent",
   "agents": [
     "./agents/planner.md",
     "./agents/reviewer.md",
