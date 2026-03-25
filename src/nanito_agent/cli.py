@@ -67,38 +67,63 @@ def _run(args: list[str]) -> None:
 
     from nanito_agent.agents import discover_agents, validate_playbook_agents
     from nanito_agent.executor import compile_execution
+    from nanito_agent.memory import PlaybookMemory
     from nanito_agent.playbook import parse_playbook
     from nanito_agent.runner import plan_execution, render_plan
 
     if not args:
-        console.print("[red]Usage: nanito-agent run <playbook.yaml> [--var key=val ...][/red]")
+        console.print(
+            "[red]Usage: nanito-agent run <playbook.yaml>"
+            " [--var key=val ...] [--dry-run] [--json][/red]"
+        )
         sys.exit(1)
 
+    dry_run = "--dry-run" in args
+    json_mode = "--json" in args
     playbook_path = _resolve_playbook(args[0])
     variables = _parse_vars(args[1:])
 
     playbook = parse_playbook(playbook_path)
-    console.print(f"\n[bold]Playbook:[/bold] {playbook.name}")
-    console.print(f"[dim]{playbook.description}[/dim]\n")
+    if not json_mode:
+        console.print(f"\n[bold]Playbook:[/bold] {playbook.name}")
+        console.print(f"[dim]{playbook.description}[/dim]\n")
 
     # Validate agents
     agents = discover_agents()
     missing = validate_playbook_agents(playbook.agent_names, agents)
     if missing:
-        console.print(f"[red]Missing agents: {', '.join(missing)}[/red]")
-        console.print("[dim]Create them in src/nanito_agent/agents/ or a project agents/ dir[/dim]")
+        console.print(
+            f"[red]Missing agents: {', '.join(missing)}[/red]"
+        )
+        console.print(
+            "[dim]Create them in src/nanito_agent/agents/"
+            " or a project agents/ dir[/dim]"
+        )
         sys.exit(1)
 
-    # Compile execution
-    plan = plan_execution(playbook, variables)
-    script = compile_execution(plan, agents)
+    # Load memory from Engram (prior learnings for this playbook)
+    memory = PlaybookMemory.load(playbook.name)
+    if memory.prior_learnings and not json_mode:
+        console.print("[dim]Engram: loaded prior learnings[/dim]")
 
-    if "--json" in args:
-        console.print(script.to_json())
+    # Compile execution with Engram context
+    plan = plan_execution(playbook, variables)
+    script = compile_execution(
+        plan, agents, engram_context=memory.prior_learnings,
+    )
+
+    if json_mode:
+        print(script.to_json())  # noqa: T201 — raw print for clean JSON
     else:
         console.print(render_plan(plan))
         console.print("")
         console.print(script.to_summary())
+
+    if dry_run:
+        console.print(
+            "\n[yellow]Dry run — validated plan, "
+            "no agents dispatched.[/yellow]"
+        )
 
 
 def _resolve_playbook(name: str) -> "Path":

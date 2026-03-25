@@ -1,0 +1,23 @@
+name: ship
+description: Validate and prepare code for deployment — gates, checks, and delivery
+
+inputs:
+  - target: string
+
+steps:
+  - agent: predictor
+    task: "Premortem for shipping {{target}}. What could go wrong with this deploy? What are we not seeing?"
+    output: premortem.md
+
+  - agent: devops-guard
+    task: "Pre-ship safety check — verify git state, no uncommitted changes, correct branch"
+
+  - agent: tester
+    task: "Run the full test suite. Report coverage. Flag any flaky tests."
+
+  - agent: reviewer
+    task: "Final code review of all changes since last ship. Focus on security and correctness."
+
+  - agent: shipper
+    task: "Run all ship gates. Produce ship report. Determine: SHIP / SHIP WITH WARNINGS / BLOCK."
+    output: ship-report.md

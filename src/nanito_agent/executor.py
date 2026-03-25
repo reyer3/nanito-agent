@@ -116,6 +116,7 @@ def build_agent_prompt(
     agent_def: AgentDef,
     work_dir: Path,
     prior_outputs: dict[str, str] | None = None,
+    engram_context: str | None = None,
 ) -> str:
     """Build the full prompt for an agent combining its definition and task."""
     parts = [
@@ -134,6 +135,14 @@ def build_agent_prompt(
             "\nRead these files for context before starting your task."
         )
         parts.append("\n".join(ctx_lines))
+    if engram_context:
+        parts.append(
+            "## Memory (from prior sessions)\n"
+            "The following learnings were recalled from persistent memory. "
+            "Use them to avoid repeating past mistakes and to build on "
+            "what worked before.\n\n"
+            f"{engram_context}"
+        )
     return "\n\n".join(parts)
 
 
@@ -141,6 +150,7 @@ def compile_execution(
     plan: ExecutionPlan,
     agents: dict[str, AgentDef],
     work_dir: Path | None = None,
+    engram_context: str | None = None,
 ) -> ExecutionScript:
     """Compile an execution plan into concrete agent commands."""
     wdir = work_dir or Path.cwd()
@@ -156,6 +166,7 @@ def compile_execution(
             prompt = build_agent_prompt(
                 step, agent_def, wdir,
                 prior_outputs=accumulated_outputs or None,
+                engram_context=engram_context,
             )
             cmd = AgentCommand(
                 agent_name=step.agent,

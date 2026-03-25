@@ -76,9 +76,11 @@ def _parse_step(data: dict[str, Any]) -> Step:
 
 def parse_playbook(source: str | Path) -> Playbook:
     """Parse a playbook from a YAML file path or YAML string."""
-    if isinstance(source, Path) or (
-        isinstance(source, str) and not source.strip().startswith("name:")
-    ):
+    is_yaml_string = (
+        isinstance(source, str)
+        and ("\n" in source.strip() or source.strip().startswith("name:"))
+    )
+    if isinstance(source, Path) or (isinstance(source, str) and not is_yaml_string):
         path = Path(source)
         if not path.exists():
             msg = f"Playbook file not found: {path}"
