@@ -19,6 +19,10 @@ def main() -> None:
         _status()
     elif args[0] == "sessions":
         _sessions(args[1:])
+    elif args[0] == "run":
+        _run(args[1:])
+    elif args[0] == "agents":
+        _agents()
     elif args[0] == "--help":
         _help()
     else:
@@ -58,11 +62,99 @@ def _sessions(args: list[str]) -> None:
         show_session(args[0])
 
 
+def _run(args: list[str]) -> None:
+    from pathlib import Path
+
+    from nanito_agent.agents import discover_agents, validate_playbook_agents
+    from nanito_agent.playbook import parse_playbook
+    from nanito_agent.runner import plan_execution, render_plan
+
+    if not args:
+        console.print("[red]Usage: nanito-agent run <playbook.yaml> [--var key=val ...][/red]")
+        sys.exit(1)
+
+    playbook_path = _resolve_playbook(args[0])
+    variables = _parse_vars(args[1:])
+
+    playbook = parse_playbook(playbook_path)
+    console.print(f"\n[bold]Playbook:[/bold] {playbook.name}")
+    console.print(f"[dim]{playbook.description}[/dim]\n")
+
+    # Validate agents
+    agents = discover_agents()
+    missing = validate_playbook_agents(playbook.agent_names, agents)
+    if missing:
+        console.print(f"[red]Missing agents: {', '.join(missing)}[/red]")
+        console.print("[dim]Create them in src/nanito_agent/agents/ or a project agents/ dir[/dim]")
+        sys.exit(1)
+
+    # Show execution plan
+    plan = plan_execution(playbook, variables)
+    console.print(render_plan(plan))
+    console.print("\n[yellow]Execution not yet implemented — plan preview only.[/yellow]")
+
+
+def _resolve_playbook(name: str) -> "Path":
+    from pathlib import Path
+
+    # Direct path
+    path = Path(name)
+    if path.exists():
+        return path
+
+    # Check builtin playbooks
+    builtin = Path(__file__).parent.parent.parent / "playbooks" / name
+    if builtin.exists():
+        return builtin
+    if not name.endswith(".yaml"):
+        builtin_yaml = builtin.with_suffix(".yaml")
+        if builtin_yaml.exists():
+            return builtin_yaml
+
+    console.print(f"[red]Playbook not found: {name}[/red]")
+    sys.exit(1)
+
+
+def _parse_vars(args: list[str]) -> dict[str, str]:
+    variables: dict[str, str] = {}
+    i = 0
+    while i < len(args):
+        if args[i] == "--var" and i + 1 < len(args):
+            key, _, val = args[i + 1].partition("=")
+            variables[key] = val
+            i += 2
+        else:
+            i += 1
+    return variables
+
+
+def _agents() -> None:
+    from rich.table import Table
+
+    from nanito_agent.agents import discover_agents
+
+    agents = discover_agents()
+
+    table = Table(title="Available Agents", show_header=True)
+    table.add_column("Name", style="cyan")
+    table.add_column("Model", style="dim")
+    table.add_column("Worktree")
+    table.add_column("Description")
+
+    for name, agent in sorted(agents.items()):
+        wt = "[green]yes[/green]" if agent.worktree else ""
+        table.add_row(name, agent.model, wt, agent.description)
+
+    console.print(table)
+
+
 def _help() -> None:
     console.print(
         "\n[bold]Usage:[/bold]"
         "\n  nanito-agent setup [--dry-run]   Configure Claude Code"
         "\n  nanito-agent status              Show current config status"
         "\n  nanito-agent sessions [id]       Session history (--stats for aggregate)"
+        "\n  nanito-agent run <playbook>      Run a playbook (--var key=val)"
+        "\n  nanito-agent agents              List available agents"
         "\n  nanito-agent --help              This message\n"
     )

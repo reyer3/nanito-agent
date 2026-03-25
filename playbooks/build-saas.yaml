@@ -1,0 +1,34 @@
+name: build-saas
+description: Materialize a SaaS idea into a functional codebase
+
+inputs:
+  - idea: string
+  - stack: string
+
+steps:
+  - agent: architect
+    task: "Design the system architecture for: {{idea}}. Stack: {{stack}}"
+    output: spec.md
+
+  - parallel:
+    - agent: api-designer
+      task: "Design the REST API based on the architecture spec"
+      output: api-spec.yaml
+    - agent: frontend-builder
+      task: "Design the UI/UX based on the architecture spec"
+      output: ui-spec.md
+      worktree: true
+
+  - parallel:
+    - agent: implementer
+      task: "Build the backend from the API spec"
+      worktree: true
+    - agent: implementer
+      task: "Build the frontend from the UI spec"
+      worktree: true
+
+  - agent: tester
+    task: "Write and run comprehensive tests for backend and frontend"
+
+  - agent: reviewer
+    task: "Final code review — security, quality, correctness"
