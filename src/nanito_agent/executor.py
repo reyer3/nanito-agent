@@ -115,6 +115,7 @@ def build_agent_prompt(
     step: ResolvedStep,
     agent_def: AgentDef,
     work_dir: Path,
+    prior_outputs: dict[str, str] | None = None,
 ) -> str:
     """Build the full prompt for an agent combining its definition and task."""
     parts = [
@@ -125,6 +126,14 @@ def build_agent_prompt(
     ]
     if step.output:
         parts.append(f"## Expected Output\nWrite results to: {step.output}")
+    if prior_outputs:
+        ctx_lines = ["## Context from Prior Phases"]
+        for filename, desc in prior_outputs.items():
+            ctx_lines.append(f"- **{filename}**: {desc}")
+        ctx_lines.append(
+            "\nRead these files for context before starting your task."
+        )
+        parts.append("\n".join(ctx_lines))
     return "\n\n".join(parts)
 
 
@@ -137,11 +146,17 @@ def compile_execution(
     wdir = work_dir or Path.cwd()
     phase_commands: list[PhaseCommands] = []
 
+    # Track outputs from completed phases for context chaining
+    accumulated_outputs: dict[str, str] = {}
+
     for phase in plan.phases:
         commands: list[AgentCommand] = []
         for step in phase.steps:
             agent_def = agents[step.agent]
-            prompt = build_agent_prompt(step, agent_def, wdir)
+            prompt = build_agent_prompt(
+                step, agent_def, wdir,
+                prior_outputs=accumulated_outputs or None,
+            )
             cmd = AgentCommand(
                 agent_name=step.agent,
                 prompt=prompt,
@@ -150,6 +165,13 @@ def compile_execution(
                 output_file=step.output,
             )
             commands.append(cmd)
+
+        # Register outputs from this phase for next phases
+        for step in phase.steps:
+            if step.output:
+                accumulated_outputs[step.output] = (
+                    f"Produced by {step.agent}"
+                )
 
         phase_commands.append(PhaseCommands(
             phase_number=phase.phase_number,

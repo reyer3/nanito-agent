@@ -148,3 +148,43 @@ def test_worktree_inheritance():
         if c.agent_name == "implementer"
     ][0]
     assert impl_cmd.worktree is True
+
+
+def test_output_chaining():
+    """Phase 2 agents receive context from phase 1 outputs."""
+    agents = discover_agents()
+    plan = plan_execution(PLAYBOOK_YAML)
+    script = compile_execution(plan, agents)
+
+    # Phase 1 architect produces spec.md
+    # Phase 2 agents should have "Context from Prior Phases" in prompt
+    p2_prompts = [c.prompt for c in script.phases[1].commands]
+    for prompt in p2_prompts:
+        assert "Context from Prior Phases" in prompt
+        assert "spec.md" in prompt
+
+
+def test_no_context_on_first_phase():
+    """First phase has no prior outputs context."""
+    agents = discover_agents()
+    plan = plan_execution(PLAYBOOK_YAML)
+    script = compile_execution(plan, agents)
+
+    first_prompt = script.phases[0].commands[0].prompt
+    assert "Context from Prior Phases" not in first_prompt
+
+
+def test_build_agent_prompt_with_prior_outputs():
+    """build_agent_prompt includes prior outputs when provided."""
+    agent_def = AgentDef(name="impl", description="", prompt="Build.")
+    from nanito_agent.runner import ResolvedStep
+
+    step = ResolvedStep(
+        agent="impl", task="Build it", output=None, worktree=False,
+    )
+    prompt = build_agent_prompt(
+        step, agent_def, Path("/proj"),
+        prior_outputs={"spec.md": "Produced by architect"},
+    )
+    assert "spec.md" in prompt
+    assert "Produced by architect" in prompt
