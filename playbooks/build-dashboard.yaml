@@ -6,8 +6,12 @@ inputs:
   - metrics: string
 
 steps:
+  - agent: predictor
+    task: "Premortem for building a dashboard on {{data_source}} with metrics: {{metrics}}. Data quality risks? Performance bottlenecks?"
+    output: premortem.md
+
   - agent: architect
-    task: "Design dashboard architecture for {{data_source}} with metrics: {{metrics}}"
+    task: "Design dashboard architecture for {{data_source}} with metrics: {{metrics}}. Consider premortem findings."
     output: spec.md
 
   - parallel:
@@ -18,6 +22,9 @@ steps:
       task: "Design the dashboard layout and visualization components"
       output: ui-spec.md
 
+  - agent: devops-guard
+    task: "Safety check before implementation"
+
   - parallel:
     - agent: implementer
       task: "Build the data API and query layer"
@@ -26,8 +33,11 @@ steps:
       task: "Build the dashboard frontend with charts and filters"
       worktree: true
 
+  - agent: devops-guard
+    task: "Post-implementation safety check"
+
   - agent: tester
     task: "Write tests for data queries and dashboard interactions"
 
   - agent: reviewer
-    task: "Final review — data correctness, performance, UX"
+    task: "Final review — data correctness, performance, UX. Cross-reference premortem."

@@ -1,17 +1,27 @@
 name: fix-bug
-description: Diagnose and fix a bug — debugger finds root cause, fixer implements minimal fix
+description: Diagnose and fix a bug — premortem, debug, fix, verify
 
 inputs:
   - bug: string
 
 steps:
+  - agent: predictor
+    task: "Premortem for fixing: {{bug}}. What could go wrong with the fix? What are we probably not seeing about the root cause?"
+    output: premortem.md
+
   - agent: debugger
     task: "Investigate and diagnose this bug: {{bug}}"
     output: diagnosis.md
 
+  - agent: devops-guard
+    task: "Safety check before applying fix"
+
   - agent: fixer
     task: "Implement the fix based on the diagnosis. Add a regression test."
     worktree: true
+
+  - agent: devops-guard
+    task: "Post-fix safety check — tests pass, no regressions"
 
   - agent: reviewer
     task: "Review the fix — correctness, regression test quality, no collateral damage"

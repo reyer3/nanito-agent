@@ -6,8 +6,13 @@ inputs:
   - stack: string
 
 steps:
+  # Phase 0: Premortem — break hyperfocalization before building
+  - agent: predictor
+    task: "Premortem analysis for building a SaaS: {{idea}}. Stack: {{stack}}. Identify assumptions, failure modes, blind spots, and kill criteria."
+    output: premortem.md
+
   - agent: architect
-    task: "Design the system architecture for: {{idea}}. Stack: {{stack}}"
+    task: "Design the system architecture for: {{idea}}. Stack: {{stack}}. Consider the premortem findings."
     output: spec.md
 
   - parallel:
@@ -19,6 +24,10 @@ steps:
       output: ui-spec.md
       worktree: true
 
+  # Guard check before heavy implementation
+  - agent: devops-guard
+    task: "Safety check before implementation phase — verify git state, test health, rollback readiness"
+
   - parallel:
     - agent: implementer
       task: "Build the backend from the API spec"
@@ -27,8 +36,12 @@ steps:
       task: "Build the frontend from the UI spec"
       worktree: true
 
+  # Guard check after implementation
+  - agent: devops-guard
+    task: "Post-implementation safety check — verify tests pass, no config drift, rollback point exists"
+
   - agent: tester
     task: "Write and run comprehensive tests for backend and frontend"
 
   - agent: reviewer
-    task: "Final code review — security, quality, correctness"
+    task: "Final code review — security, quality, correctness. Cross-reference against premortem risks."

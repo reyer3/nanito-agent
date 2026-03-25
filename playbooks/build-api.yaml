@@ -6,20 +6,30 @@ inputs:
   - framework: string
 
 steps:
+  - agent: predictor
+    task: "Premortem for building an API: {{idea}}. Framework: {{framework}}. What could go wrong?"
+    output: premortem.md
+
   - agent: architect
-    task: "Design the API architecture for: {{idea}}. Framework: {{framework}}"
+    task: "Design the API architecture for: {{idea}}. Framework: {{framework}}. Consider premortem findings."
     output: spec.md
 
   - agent: api-designer
     task: "Design REST endpoints and OpenAPI spec from the architecture"
     output: api-spec.yaml
 
+  - agent: devops-guard
+    task: "Safety check before implementation"
+
   - agent: implementer
     task: "Implement the API from the OpenAPI spec"
     worktree: true
+
+  - agent: devops-guard
+    task: "Post-implementation safety check"
 
   - agent: tester
     task: "Write integration tests for all API endpoints"
 
   - agent: reviewer
-    task: "Review API code — security, correctness, performance"
+    task: "Review API code — security, correctness, performance. Check against premortem risks."
