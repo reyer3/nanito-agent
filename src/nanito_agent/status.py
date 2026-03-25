@@ -66,6 +66,25 @@ def show_status() -> None:
         plugin_count = len(settings.get("enabledPlugins", {}))
         table.add_row("Plugins", "[green]OK[/green]" if plugin_count else "[yellow]NONE[/yellow]", f"{plugin_count} enabled")
 
+    # Session monitor
+    sessions_db = CLAUDE_DIR / "nanito-sessions.db"
+    if sessions_db.exists():
+        import sqlite3
+
+        conn = sqlite3.connect(str(sessions_db))
+        session_count = conn.execute("SELECT COUNT(DISTINCT session_id) FROM events").fetchone()[0]
+        event_count = conn.execute("SELECT COUNT(*) FROM events").fetchone()[0]
+        conn.close()
+        table.add_row("Session monitor", "[green]OK[/green]", f"{session_count} sessions, {event_count} events")
+    else:
+        table.add_row("Session monitor", "[dim]NO DATA[/dim]", "Will populate on next Claude Code session")
+
+    # ccboard
+    if shutil.which("ccboard"):
+        table.add_row("ccboard", "[green]OK[/green]", "Real-time TUI monitor")
+    else:
+        table.add_row("ccboard", "[dim]NOT INSTALLED[/dim]", "Optional: see setup output for install")
+
     # SuperClaude
     sc_dir = CLAUDE_DIR / "commands" / "sc"
     if sc_dir.exists():

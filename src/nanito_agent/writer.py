@@ -26,6 +26,7 @@ def install_config(profile: dict) -> None:
     _install_hooks()
     _patch_settings(profile)
     _check_engram()
+    _check_ccboard()
     _check_superclaude()
 
 
@@ -67,12 +68,15 @@ def _install_hooks() -> None:
 
     HOOKS_DIR.mkdir(parents=True, exist_ok=True)
 
-    for hook_file in hooks_src.glob("*.sh"):
-        dest = HOOKS_DIR / hook_file.name
-        shutil.copy2(hook_file, dest)
-        dest.chmod(0o755)
+    count = 0
+    for pattern in ("*.sh", "*.py"):
+        for hook_file in hooks_src.glob(pattern):
+            dest = HOOKS_DIR / hook_file.name
+            shutil.copy2(hook_file, dest)
+            dest.chmod(0o755)
+            count += 1
 
-    console.print(f"  [green]{len(list(hooks_src.glob('*.sh')))} hooks[/green] installed")
+    console.print(f"  [green]{count} hooks[/green] installed")
 
 
 def _patch_settings(profile: dict) -> None:
@@ -166,14 +170,20 @@ def _patch_settings(profile: dict) -> None:
         f"bash {hooks_dir_str}/console-warn.sh",
         f"bash {hooks_dir_str}/test-nudge.sh",
     ])
+    # Session monitor — logs all events to SQLite
+    monitor_cmd = f"python3 {hooks_dir_str}/session-monitor.py"
+    _ensure_hook(hooks, "PreToolUse", "*", [monitor_cmd])
     _ensure_hook(hooks, "SessionStart", "*", [
         f"bash {hooks_dir_str}/session-start.sh",
+        monitor_cmd,
     ], timeout=5000)
     _ensure_hook(hooks, "Stop", "*", [
         f"bash {hooks_dir_str}/session-end.sh",
+        monitor_cmd,
     ], timeout=5000)
     _ensure_hook(hooks, "PreCompact", "*", [
         f"bash {hooks_dir_str}/pre-compact.sh",
+        monitor_cmd,
     ], timeout=5000)
 
     SETTINGS_FILE.write_text(json.dumps(settings, indent=2, ensure_ascii=False) + "\n")
@@ -249,6 +259,20 @@ def _check_engram() -> None:
             "    Install later: "
             "[dim]go install github.com/Gentleman-Programming/engram/cmd/engram@latest[/dim]"
         )
+
+
+def _check_ccboard() -> None:
+    """Check if ccboard is installed for real-time session monitoring."""
+    if shutil.which("ccboard"):
+        console.print("  [green]ccboard[/green] detected")
+        return
+
+    console.print(
+        "  [yellow]ccboard not found.[/yellow] Recommended for real-time session monitoring."
+        "\n    Install:"
+        "\n    [dim]curl -sSL https://raw.githubusercontent.com/FlorianBruniaux/ccboard/main/install.sh | bash[/dim]"
+        "\n    Or download: [dim]https://github.com/FlorianBruniaux/ccboard/releases/latest[/dim]"
+    )
 
 
 def _check_superclaude() -> None:

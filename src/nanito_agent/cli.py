@@ -17,6 +17,8 @@ def main() -> None:
         _setup(dry_run="--dry-run" in args)
     elif args[0] == "status":
         _status()
+    elif args[0] == "sessions":
+        _sessions(args[1:])
     elif args[0] == "--help":
         _help()
     else:
@@ -45,10 +47,22 @@ def _status() -> None:
     show_status()
 
 
+def _sessions(args: list[str]) -> None:
+    from nanito_agent.monitor import list_sessions, show_session, show_stats
+
+    if not args:
+        list_sessions()
+    elif args[0] == "--stats":
+        show_stats()
+    else:
+        show_session(args[0])
+
+
 def _help() -> None:
     console.print(
         "\n[bold]Usage:[/bold]"
         "\n  nanito-agent setup [--dry-run]   Configure Claude Code"
         "\n  nanito-agent status              Show current config status"
+        "\n  nanito-agent sessions [id]       Session history (--stats for aggregate)"
         "\n  nanito-agent --help              This message\n"
     )
